@@ -1,7 +1,7 @@
 (defparameter *nibblecode* ())
 (defparameter *current-ip* 0)
 
-(defconstant +jump-label-size+ 4)
+(defconstant +jump-label-size+ 4) ;; FIXME: breaks when this is changed
 
 (defun value-to-nibbles (value size)
   (let (code)
@@ -52,6 +52,9 @@
 
 (defun get-instruction (name)
   (gethash name *instruction-table*))
+
+;; an opcode refernce
+;; https://github.com/ethereum/pyethereum/blob/develop/ethereum/opcodes.py#L74
 
 (defop stop	#x0 0)
 (defop add	#x1 3)
@@ -190,18 +193,28 @@
 (defop swap	#xb2)
 
 (defop create	#xf0 32000)
-(defop call	#xf1)
-(defop callcode	#xf2)
+(defop call	#xf1 40)
+(defop callcode	#xf2 700)
 (defop return	#xf3 0)
-(defop delegatecall #xf4)
+(defop delegatecall #xf4 700)
+(defop callblackbox #xf5 40)
 
-(defop selfdestruct #xff 0)
+(defop staticcall #xfa 40)
+
+;; (defop revert #xfe 0)
+
+(defop selfdestruct #xff 5000)
 
 (defparameter *labels* ())
 
 (defun get-opcode (instruction)
-  (instruction-opcode 
-   (gethash instruction *instruction-table*)))
+  (let ((data (gethash instruction *instruction-table*)))
+    (unless data
+      (format *error-output* "Invalid opcode: ~A~%" instruction)
+      (quit))
+    
+    (instruction-opcode data)))
+      
 
 (defun auto-push-number (value)
   (let* ((number-of-bytes (integer-number-of-bytes value))
@@ -302,26 +315,57 @@
         (format t output)
         (fresh-line)))))
 
-(defun no-error-read ()
-  (read *standard-input* nil))
+(defun no-error-read (s)
+    (read s nil))
 
-(defun main ()
-  (let (code)
-    (handler-case
-      (do ((op (no-error-read) (no-error-read)))
-          ((and op (eq op '.end)))
-        (push op code))
-      (error (e)
-        (declare (ignore e))
-        (print :error)
-        (quit)))
-    
+(defun read-source-file (s)
+
+  (setf *read-eval* nil) ;; disable #.(...), eval during read.
+  
+  (labels ((include-file (filename)
+             (with-open-file (s filename)
+               (format *error-output* "~%Including ~S~%" filename)
+               (let ((code (read-source-file s)))
+                 (format *error-output* "~%Succesfully included ~S~%" filename)
+                 code)
+               )))
+    (let (code)
+      (handler-case
+          (do ((op (no-error-read s) (no-error-read s)))
+              ((and op (eq op '.end)))
+            (case op
+              (.include
+               (setf code (append (include-file (no-error-read s)) code))
+               ;(print code)
+               )
+;; Interesting idea but doesn't work just yet              
+;;              (.requires
+;;               (let ((label (no-error-read s)))
+;;                 (unless (gethash label *labels*)
+;;                   (error "Required label: ~A has not been included." label))))
+              (.enable-read-eval!
+               (setf *read-eval* t))
+              (.disable-read-eval!
+               (setf *read-eval* nil))
+              (t
+               (push op code))))
+        (error (e)
+          (print :error)
+          (princ e)))
+      code)))
+
+(defun main (&optional filename)
+  (let* ((s (if filename (open filename) *standard-input*))
+         (code (read-source-file s)))
       
-    (setf code (nreverse code))
-    
     (setf *current-ip* 0
           *nibblecode* ()
           *labels* (make-hash-table))
+    
+    (setf code (nreverse code))
+
+    ;(print :assembling *error-output*)
+    ;(pprint code *error-output*)
     
     (scan-for-labels code)
     
@@ -333,4 +377,4 @@
     (setf *current-ip* 0
           *nibblecode* ())
     
-    (ignore-errors (assemble code))))
+    (assemble code)))
