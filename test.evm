@@ -1,0 +1,12 @@
+.label :main
+
+10 10 add
+
+:after jump
+:main jump
+
+.label :after
+
+stop
+
+.end
