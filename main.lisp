@@ -219,13 +219,14 @@
 ))
 
 (defun emit (data)
-  (typecase data
-    (symbol
-     (emit-byte (get-opcode data)))
-    (number
-     (auto-push-number data))
-    (string
-     (auto-push-string data)))
+  (when data ;; ignore nils
+    (typecase data
+      (symbol
+       (emit-byte (get-opcode data)))
+      (number
+       (auto-push-number data))
+      (string
+       (auto-push-string data))))
 ;  (print data)
 ;  (print *nibblecode*)
 ;  (print *current-ip*)
@@ -249,7 +250,7 @@
 (defun assemble (code)
   (loop
    (unless code (return))
-   
+
    (let ((instruction (pop code)))
      (case instruction 
        (.label
@@ -301,12 +302,21 @@
         (format t output)
         (fresh-line)))))
 
+(defun no-error-read ()
+  (read *standard-input* nil))
+
 (defun main ()
   (let (code)
-    (do ((op (read) (read)))
-        ((eq op '.end))
-      (push op code))
+    (handler-case
+      (do ((op (no-error-read) (no-error-read)))
+          ((and op (eq op '.end)))
+        (push op code))
+      (error (e)
+        (declare (ignore e))
+        (print :error)
+        (quit)))
     
+      
     (setf code (nreverse code))
     
     (setf *current-ip* 0
