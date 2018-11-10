@@ -167,7 +167,7 @@ Security
 
 Read time evaluation is disabled by default for safety and security.
 Use the assembler ops .enable-read-eval! and .disable-read-eval! to
-enable/disable sharp dot ($.(...)) evaluation.
+enable/disable sharp dot (#.(...)) evaluation.
 
 TODO:
 
