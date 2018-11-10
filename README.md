@@ -11,6 +11,9 @@ stack using the correctly sized push instruction.
 
 Comments are started with semicolon (;).
 
+Files may be included with the .include "<filename>" directive and are
+inserted inline into the bytecode stream.
+
 Labels are keywords and thus must be prefixed with a colon (:) and
 prefixed by the assembler op .label.  Labels currently take up 4 bytes
 in the bytecode stream; I hope to add an optimizer for this in the
@@ -19,7 +22,8 @@ value will be big enough even for the largest of contracts.  Should
 this be too big or small, change +jump-label-size+ to a number of
 bytes value.
 
-Source files must be ended with the assembler op .end.
+Source files must be ended with the assembler op .end to signal end of
+code.
 
 After assembly the Gas cost of the bytecode and the bytecode are
 printed. Labels and statistics are printed to Standard Error so the
@@ -30,6 +34,10 @@ Usage
 
 ```
 $ cat test.evm
+:main jump
+
+.include "libs/safemath.evm" ;; WIP
+	
 .label :main
 
 10 10 add
@@ -45,7 +53,6 @@ $ cat test.evm
 stop
 
 .end
-
 
 $ evmas < test.evm
 
@@ -126,6 +133,10 @@ An EVM instruction set reference can be found here:
 
 https://gist.github.com/hayeah/bd37a123c02fecffbe629bf98a8391df
 
+Another useful reference with instruction descriptions can be found here:
+
+https://solidity.readthedocs.io/en/v0.4.25/assembly.html
+
 
 Building
 --
@@ -140,11 +151,24 @@ Then use the following command to build evmas:
 $ sh build.sh
 ```
 
+Evmas should also work with with other lisps (clisp, ecl, etc) with a
+different 'build' command.
+
+Function Selector Generator
+--
+
+To be compatible wit the Ethereum ABI, I have included the a function
+signature generator.  Use 'npm install' to install its dependencies.
+See the ABI docs and examples for more details.
+
+Security
+--
+
+Read time evaluation is disabled by default for safety and security.
+Use the assembler ops .enable-read-eval! and .disable-read-eval! to
+enable/disable sharp dot ($.(...)) evaluation.
+
 TODO:
-
--- add .string for string support
-
--- add .define for constants
 
 -- some sort of lispy macro'ish support of sort
 
