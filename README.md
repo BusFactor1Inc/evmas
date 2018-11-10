@@ -7,8 +7,9 @@ Labels are keywords and thus must be prefixed with a colon (:) and
 prefixed by the assembler op .label.  Labels currently take up 4 bytes
 in the bytecode stream; I hope to add an optimizer for this in the
 future to reduce the byte count on code smaller than 64k, but this
-value will even the largeset contracts I think.  Should this be too
-big or small, change +jump-label-size+ to a number of bytes value.
+value will be big enough even for the largest of contracts.  Should
+this be too big or small, change +jump-label-size+ to a number of
+bytes value.
 
 Source files must be ended with the assembler op .end.
 
