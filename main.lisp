@@ -26,6 +26,19 @@
 (defun emit-number (number)
   (emit-bytes (integer-number-of-bytes number) number))
 
+(defun emit-string (string)
+  (assert (<= (length string) 32))
+  (let (nibbles)
+    (dolist (byte (nreverse
+                   (map 'list (lambda (c)
+                                (char-code c)) string)))
+      (let ((high (ash byte -4))
+            (low (logand byte #xf)))
+        (push low nibbles)
+        (push high nibbles)))
+    (push nibbles *nibblecode*)
+    (incf *current-ip* (length string))))
+
 (defparameter *instruction-table* (make-hash-table))
 
 (defstruct instruction 
@@ -197,12 +210,22 @@
                 (gethash pusher *instruction-table*)))
     (emit-number value)))
 
+(defun auto-push-string (string)
+  (let* ((length (length string))
+         (pusher (intern (format nil "PUSH~A" length))))
+    (emit-byte (instruction-opcode
+                (gethash pusher *instruction-table*)))
+    (emit-string string)
+))
+
 (defun emit (data)
   (typecase data
     (symbol
      (emit-byte (get-opcode data)))
     (number
-     (auto-push-number data)))
+     (auto-push-number data))
+    (string
+     (auto-push-string data)))
 ;  (print data)
 ;  (print *nibblecode*)
 ;  (print *current-ip*)
@@ -228,18 +251,19 @@
    (unless code (return))
    
    (let ((instruction (pop code)))
-     (if (eq instruction '.label)
-         (progn
-           (pop code)
-           (emit 'jmpdest))
-       (typecase instruction
-         (keyword
-          (let* ((label instruction)
-                 (address (gethash label *labels*)))
-            (emit 'push4)
-            (emit-bytes +jump-label-size+ address)))
-         (t
-          (emit instruction))))))
+     (case instruction 
+       (.label
+        (pop code)
+        (emit 'jmpdest))
+       (t
+        (typecase instruction
+          (keyword
+           (let* ((label instruction)
+                  (address (gethash label *labels*)))
+             (emit 'push4)
+             (emit-bytes +jump-label-size+ address)))
+          (t
+           (emit instruction)))))))
    
   (setf *nibblecode* (nreverse *nibblecode*))
   ;(print *nibblecode*)
@@ -267,7 +291,7 @@
                    (incf gascost gascount)
                    (dolist (byte bytes)
                      (format s "~2,'0X" byte)))))))
-        (print :bytecode-gascost *error-output*)
+        (print :bytecode-gas-cost *error-output*)
         (print gascost *error-output*)
         (force-output *error-output*)
         

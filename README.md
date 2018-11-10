@@ -6,7 +6,8 @@ Evmas is a simple assembler for the EVM written in Common Lisp.
 Numbers are automatically pushed onto the stack with the appropriately
 sized push instruction.
 
-Strings are not supported as of yet.
+Strings up to 32 characters are supported and autopushed onto the
+stack using the correctly sized push instruction.
 
 Labels are keywords and thus must be prefixed with a colon (:) and
 prefixed by the assembler op .label.  Labels currently take up 4 bytes

@@ -3,6 +3,9 @@
 10 10 add
 
 :after jump
+
+"this is a string" ; autopushed
+
 :main jump
 
 .label :after
