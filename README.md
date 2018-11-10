@@ -3,6 +3,11 @@ evmas - An Assembler for the Ethereum Virtual Machine (EVM)
 
 Evmas is a simple assembler for the EVM written in Common Lisp.
 
+Numbers are automatically pushed onto the stack with the appropriately
+sized push instruction.
+
+Strings are not supported as of yet.
+
 Labels are keywords and thus must be prefixed with a colon (:) and
 prefixed by the assembler op .label.  Labels currently take up 4 bytes
 in the bytecode stream; I hope to add an optimizer for this in the
@@ -85,6 +90,14 @@ Then use the following command to build evmas:
 ```
 $ sh build.sh
 ```
+
+TODO:
+
+-- add .string for string support
+
+-- add .define for constants
+
+-- some sort of lispy macro'ish support of sort
 
 --
 
