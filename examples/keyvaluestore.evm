@@ -1,0 +1,88 @@
+;;
+;; keyvaluestore.evm
+;;
+;; Registry service for [key, value] storage store.
+;;
+;; Based on the example from:
+;;
+;; https://github.com/ethereum/wiki/wiki/Ethereum-Development-Tutorial
+;;
+;; Warning: syntax only example, UNTESTED	
+;;	
+;; BusFactor1 Inc.
+;; Copyright 2018
+;; License: MIT
+
+:init jump	
+.include "libs/abort.evm"
+
+.label :init
+	:start :end sub dup1 :start 0 codecopy
+	0 return 
+	stop
+
+.label :start	
+	4 calldataload 		;; get function selector
+
+	
+
+.label :register
+	;; Prototype: register(address,uint256)
+	;; Signature: 
+	;; Calldata:
+	;; 
+	;; [0]	 	32 byte key
+	;; [32]		32 byte value
+	;;
+	;; Return data:
+	;;
+	;; [0]		0, value was already registered
+	;;		1, value was registered
+
+	;; Check for proper arguments
+	calldatasize		;; load the amount of call data
+	64 sub			;; check if 64 bytes were passed to the call
+	:abort jumpi 		;; abort if imporoper number of aruments (2)
+
+	;; Load first argument
+	0 calldataload		;; load 32 bytes from call data location 0
+	
+	sload			;; load the storage location specified in calldata[0]
+	
+	not			;; push 1 if storage value was initially 0 (not registered)
+
+	:register-value jumpi	;; if result is 1, skip over stop
+	0 mstore		;; store failure in memory location 0
+	0 32 return		;; return to caller
+	
+.label :register-value		;; register the value in storage
+
+	32 calldataload		;; put the value to store on the stack
+	0 calldataload		;; put the address to store it in on the stack
+	sstore			;; store the address
+
+	1 mstore		;; store success in memory location 0
+	0 32 return		;; return to caller
+
+.label :get
+	;; Calldata:
+	;;
+	;; [0]		value address
+	;;
+	;; Return value:
+	;; [0] 		0, failure to find value
+	;;		1, found value, contents in [32]
+	;; [32]		value if found
+
+	calldatasize	;; get amount of data passed to call
+	32 sub		;; subtract expected amount of data
+	:abort jumpi
+
+	0 calldataload	;; get the address to retrieve
+	sload		;; load the data from the address
+	0 mstore	;; store the value at memory location 0
+
+	0 32 return	;; return the 32 bytes of data from s[address]
+
+.label :end	
+.end

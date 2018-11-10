@@ -1,0 +1,5 @@
+.label :abort
+	
+	"abort" stop	;; Laave something on the stack for debugging
+
+.end
