@@ -1,1 +1,3 @@
-./evm-disassemble $(./evmas < ${1-test.evm})
+#!/bin/bash
+	
+./evmas < ${1-test.evm} | ./evm-disassemble

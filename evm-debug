@@ -1,2 +1,1 @@
-echo $(./evmas) > /tmp/bytecode
-evm --code $(</tmp/bytecode) --debug run
+evm --code $(cat) --debug run

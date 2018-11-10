@@ -1,2 +1,2 @@
-echo $(./evmas) > /tmp/bytecode
+cat > /tmp/bytecode
 evm disasm /tmp/bytecode

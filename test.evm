@@ -1,22 +1,26 @@
 :main jump			;; jump to main code start
 
-.include "libs/safeAdd.evm"	;; include library code
+.include "examples/abort.evm"	;; required by safeAdd	
+.include "examples/safeAdd.evm"	;; include library code
 
 .label :main			;; main code start
 
-	10 10 add 			;; unsafe add instruction call	
+	10 10 add 		;; unsafe add instruction call	
 	pop
 	
-	:after jump			;; jump past infinite loop
+	:after jump		;; jump past infinite loop
 
-	:main jump  			;; loop back to main, but jumped over abov
+	:main jump  		;; loop back to main, but jumped over abov
 
 .label :after			;; after infinite loop call
-	"this is a string" 		;; autopushed string less than 32 characters
+	"this is a string"	;; autopushed string less than 32 characters
 	pop
-	
-	10 10 :afterSafeAdd :safeAdd jump .label :afterSafeAdd ;; call :safeAdd from library
 
-stop				;; stop execution
+	;; Call :safeAdd from library
+	:afterSafeAdd 10 10 :safeAdd jump .label :afterSafeAdd
+	
+	pop			;; remove value from stack
+
+	stop				;; stop execution
 
 .end
