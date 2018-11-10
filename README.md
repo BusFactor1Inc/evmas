@@ -36,7 +36,8 @@ Usage
 $ cat test.evm
 :main jump
 
-.include "libs/safemath.evm" ;; WIP
+.include "examples/abort.evm" 	;; used by safeAddd
+.include "examples/safeAdd.evm"	;; include the safeAdd function
 	
 .label :main
 
