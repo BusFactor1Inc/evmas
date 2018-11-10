@@ -1,0 +1,14 @@
+{
+  "name": "generate-function-signature",
+  "version": "1.0.0",
+  "description": "A function signature generator for the Ethereum ABI.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Burto Samograd",
+  "license": "MIT",
+  "dependencies": {
+    "web3": "^1.0.0-beta.36"
+  }
+}
