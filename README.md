@@ -1,7 +1,7 @@
 evmas - An Assembler for the Ethereum Virtual Machine (EVM)
 ==
 
-Evma is a simple assembler for the EVM written in Common Lisp.
+Evmas is a simple assembler for the EVM written in Common Lisp.
 
 Labels are keywords and thus must be prefixed with a colon (:) and prefixed by the assembler op .label.
 
