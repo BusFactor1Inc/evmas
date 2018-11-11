@@ -207,6 +207,10 @@
 
 (defparameter *labels* ())
 (defparameter *defines* ())
+(defparameter *macros* ())
+
+(defstruct macro 
+  args body)
 
 (defmacro aif (p y &optional n)
   `(let ((it ,p))
@@ -215,22 +219,24 @@
 (defun get-opcode (instruction)
   (let ((data (aif (gethash instruction *instruction-table*) it)))
     (unless data
-      (format *error-output* "Invalid opcode: ~A~%" instruction)
+      (format *error-output* "Invalid opcode: ~S~%" instruction)
       (quit))
   
     (instruction-opcode data)))
       
 
+(declaim (ftype(function (list) t) assemble)) ;; forward decleration
+
 (defun auto-push-number (value)
   (let* ((number-of-bytes (integer-number-of-bytes value))
-         (pusher (intern (format nil "PUSH~A" number-of-bytes))))
+         (pusher (intern (format nil "PUSH~S" number-of-bytes))))
     (emit-byte (instruction-opcode 
                 (gethash pusher *instruction-table*)))
     (emit-number value)))
 
 (defun auto-push-string (string)
   (let* ((length (length string))
-         (pusher (intern (format nil "PUSH~A" length))))
+         (pusher (intern (format nil "PUSH~S" length))))
     (emit-byte (instruction-opcode
                 (gethash pusher *instruction-table*)))
     (emit-string string)
@@ -258,16 +264,22 @@
   (loop
    (unless code (return))
    (let ((instruction (pop code)))
-     (if (eq instruction '.label)
-         (progn
-           (setf (gethash (pop code) *labels*) *current-ip*)
-           (emit-byte (get-opcode 'jmpdest)))
-       (typecase instruction
-         (keyword
-          (emit 'push4)
-          (emit-bytes +jump-label-size+ #x00000000))
-         (t
-          (emit instruction)))))))
+     (case instruction
+       (.label
+        (let ((label (pop code)))
+          (format *error-output* "Definining label: ~S~%" label)
+          (setf (gethash label *labels*) *current-ip*)
+          (emit-byte (get-opcode 'jmpdest))))
+       (t 
+        (typecase instruction
+          (keyword
+           (emit 'push4)
+           (emit-bytes +jump-label-size+ #x00000000))
+          (t
+           (emit instruction))))))))
+
+(defun make-keyword (x)
+  (intern (format nil ":~S" x)))
 
 (defun assemble (code)
   (loop
@@ -284,8 +296,13 @@
            (let* ((label instruction)
                   (address (gethash label *labels*)))
              (unless address
-               (format *error-output* "~%Error: Unknown label: ~A" label)
-               (quit))
+               (setf address (gethash (make-keyword label) *labels*))
+               (unless address
+                 (format *error-output* "~%Error: Unknown label: ~S~%" label)
+                 (maphash (lambda (k v)
+                            (print k *error-output*)
+                            (print v *error-output*)) *labels*)
+                 (quit)))
              (emit 'push4)
              (emit-bytes +jump-label-size+ address)))
           (t
@@ -330,6 +347,24 @@
 (defun no-error-read (s)
     (read s nil))
 
+(defun has-macros (code)
+  (dolist (x code)
+    (when (gethash x *macros*)
+      (return-from has-macros t))))
+
+(defun expand-macro (macro s)
+  (let ((body (macro-body macro))
+        args)
+    (dotimes (i (length (macro-args macro)))
+      (push (no-error-read s) args))
+    (setf args (nreverse args))
+    
+    (mapcar (lambda (name arg)
+              (setf body (substitute arg name body)))
+            (macro-args macro) args)
+    (format *error-output* "Expanded Macro: ~S" body)
+    body))
+
 (defun read-source-file (s)
 
   (setf *read-eval* nil) ;; disable #.(...), eval during read.
@@ -353,18 +388,28 @@
               (.define
                (let ((name (no-error-read s))
                      (value (no-error-read s)))
+                 (format *error-output* "Defining ~S as: ~S~%" name value)
                  (setf (gethash name *defines*) value)))
-;; Interesting idea but doesn't work just yet              
-;;              (.requires
-;;               (let ((label (no-error-read s)))
-;;                 (unless (gethash label *labels*)
-;;                   (error "Required label: ~A has not been included." label))))
+              (.macro
+               (let ((name (no-error-read s))
+                     (args (no-error-read s))
+                     (body (no-error-read s)))
+                 (format *error-output* "Definiing macro ~S with args ~S as: ~S~%"
+                         name args body)
+                 (setf (gethash name *macros*)
+                       (make-macro :args args :body body))))
               (.enable-read-eval!
                (setf *read-eval* t))
               (.disable-read-eval!
                (setf *read-eval* nil))
               (t
-               (push op code))))
+               (aif (gethash op *macros*)
+                    (setf code (append (reverse (expand-macro it s)) code))
+                    (aif (gethash op *defines*)
+                         (if (and (listp it) (not (null it)))
+                           (setf code (append (reverse it) code))
+                           (push op code))
+                         (push op code))))))
         (error (e)
           (print :error)
           (princ e)))
@@ -374,15 +419,17 @@
   (setf *current-ip* 0
         *nibblecode* ()
         *labels* (make-hash-table)
-        *defines* (make-hash-table))
+        *defines* (make-hash-table)
+        *macros* (make-hash-table)
+        )
     
   (let* ((s (if filename (open filename) *standard-input*))
          (code (read-source-file s)))
       
     (setf code (nreverse code))
 
-    ;(print :assembling *error-output*)
-    ;(pprint code *error-output*)
+    (print :scanning-for-labels *error-output*)
+    (pprint code *error-output*)
     
     (scan-for-labels code)
     
