@@ -358,10 +358,12 @@
     (dotimes (i (length (macro-args macro)))
       (push (no-error-read s) args))
     (setf args (nreverse args))
-    
+
+    ;; Substitute arguments
     (mapcar (lambda (name arg)
               (setf body (substitute arg name body)))
             (macro-args macro) args)
+
     (format *error-output* "Expanded Macro: ~S" body)
     body))
 
@@ -430,6 +432,7 @@
 
     (print :scanning-for-labels *error-output*)
     (pprint code *error-output*)
+    (fresh-line)
     
     (scan-for-labels code)
     
