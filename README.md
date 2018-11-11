@@ -326,15 +326,14 @@ STOP            pc=00000110 gas=9999999889 cost=0
 Supported Instructions
 --
 
-An EVM instruction set reference can be found here:
+Some EVM instruction set references can be found here:
 
 https://gist.github.com/hayeah/bd37a123c02fecffbe629bf98a8391df
 
-Another useful reference with instruction descriptions can be found here:
-
 https://solidity.readthedocs.io/en/v0.4.25/assembly.html
 
-
+https://ethervm.io
+	
 Building
 --
 
