@@ -1,0 +1,91 @@
+;;
+;; erc20.evm 
+;;
+;; WARNING: UNTESTED as of yet, do not deploy or use.
+;;	
+;; An ERC20 implementation in Ethereum Assembly.
+;;
+;; Reference:
+;; 
+;; https://github.com/benjaminion/LLL_erc20
+;;
+;; BusFactor1 Inc.
+;; Copyright 2018
+;; License: MIT
+
+.define	name 		"The BusFactor1 EVM ASM Token"
+.define	name-size	28
+.define symbol 		"BF1"
+.define symbol-size 	3
+	
+;;
+;; Contract constructor code.
+;;	
+.label :init
+	;; Copy the contract code to memory
+	:start codesize sub	;; contract code size
+	dup1			;; keep a copy of code size
+	:start			;; code start address
+	0			;; where to copy it to
+	codecopy		;; perform contract code copy to memory
+
+	;; Return code for contract
+	0 return		;; code size already on stack
+
+;;
+;; Include ERC20 function selectors.
+;;
+.include "examples/erc20/erc20-selectors.evm"	
+
+.define not-payable		(callvalue :abort jumpi)
+.define payable			(callvalue iszero :abort jumpi)
+	
+;;
+;; Arguments helpers
+;;	
+.define ensure-no-arguments  	(calldatasize 4 sub :abort jumpi)	
+.define ensure-one-argument 	(calldatasize 36 sub :abort jumpi)
+
+.define load-selector			(calldataload #x4)
+.define load-arg0			(calldataload #x24)
+.define load-arg1			(calldataload #x44)
+
+.macro dispatch-function (function-label selector)
+	(load-selector		;; load selector
+         selector sub		;; compare with arg
+	 iszero			;; check if match
+	 function-label jumpi)  ;; call function if match
+
+
+;;
+;; Start of installed contract code.
+;;
+.label :start
+	;; Check for name() call
+	dispatch-function :get-name get-name-selector
+
+	;; Check for symbol() call
+	dispatch-function :get-symbol get-symbol-selector
+
+.label :next1	
+	
+	stop
+
+
+;;
+;; Include library functions.
+;; 
+
+.include "examples/abort.evm"
+.include "examples/safeMath/safeAdd.evm"
+; .include "examples/safeMath/safeSub.evm"
+
+.label :get-name
+	name 0 name-size mstore ;; store return value in memory
+	0 name-size return	;; return name value
+
+.label :get-symbol
+	symbol 0 symbol-size mstore	;; store symbol value in memory
+	0 symbol-size return		;; return symbol value
+
+.end
