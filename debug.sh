@@ -1,0 +1,1 @@
+./evmas | ./evm-debug
