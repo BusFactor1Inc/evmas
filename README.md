@@ -9,20 +9,6 @@ sized push instruction.
 Strings up to 32 characters are supported and autopushed onto the
 stack using the correctly sized push instruction.
 
-Constant words may be defined using .define, ie:
-
-	.define x 10
-	.defien s "string"
-
-	x x add		;; x is replaced by 10 in the assembly
-
-	s pop		;; s is replaced by the above string and popped
-
-Comments are started with semicolon (;).
-
-Files may be included with the .include "<filename>" directive and are
-inserted inline into the bytecode stream.
-
 Labels are keywords and thus must be prefixed with a colon (:) and
 prefixed by the assembler op .label.  Labels currently take up 4 bytes
 in the bytecode stream; I hope to add an optimizer for this in the
@@ -37,6 +23,35 @@ code.
 After assembly the Gas cost of the bytecode and the bytecode are
 printed. Labels and statistics are printed to Standard Error so the
 bytecode can be redirected to a file easily.
+
+Preprocessing	
+--
+	
+Comments are started with semicolon (;).
+	
+Constant words may be defined using .define, ie:
+
+	.define x 10
+	.define s "string"
+
+	x x add		;; x is replaced by 10 in the assembly
+
+	s pop		;; s is replaced by the above string and popped
+
+Files may be included with the .include "<filename>" directive and are
+inserted inline into the bytecode stream.
+
+Basic, non-recursively expanded macros can be defined with the .macro
+operator:
+
+	.macro add3 (x y z) (x y add z add)
+
+And used as such:
+
+	add3 1 2 3 => 1 2 add 3 add
+
+Where => means "expands to".
+	
 
 Usage
 --
@@ -351,6 +366,9 @@ enable/disable sharp dot (#.(...)) evaluation.
 
 TODO:
 
+-- automatically define x-size when doing '.define x ...' as the
+   number of bytes the definition takes
+	
 -- some sort of lispy macro'ish support of sort
 
 --
