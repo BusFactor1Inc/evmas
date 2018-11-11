@@ -1,34 +1,59 @@
 ;;
 ;; keyvaluestore.evm
 ;;
+;; BIG WARNING: syntax only example, UNTESTED AS OF YET
+;;	
+;;
 ;; Registry service for [key, value] storage store.
 ;;
 ;; Based on the example from:
 ;;
 ;; https://github.com/ethereum/wiki/wiki/Ethereum-Development-Tutorial
 ;;
-;; Warning: syntax only example, UNTESTED	
 ;;	
 ;; BusFactor1 Inc.
 ;; Copyright 2018
 ;; License: MIT
 
-:init jump	
-.include "libs/abort.evm"
-
+;;	
+;; Constructor to install contract
+;;
 .label :init
-	:start :end sub dup1 :start 0 codecopy
-	0 return 
+
+	;; Copy the contract code to memory
+	:start codesize sub	;; contract code size
+	dup1			;; keep a copy of code size
+	:start			;; code start address
+	0			;; where to copy it to
+	codecopy		;; perform contract code copy to memory
+
+	;; Return code for contract
+	0 return		;; code size already on stack
+
+	;; Stop execution
 	stop
 
+;;
+;; Main contract dispatch code.
+;;
 .label :start	
 	4 calldataload 		;; get function selector
 
-	
+	stop
 
-.label :register
-	;; Prototype: register(address,uint256)
-	;; Signature: 
+;;	
+;; Include libraries.
+;;
+	
+.include "examples/abort.evm"
+	
+;;
+;; Main contract code.
+;;	
+.label :put
+	;; Prototype: put(address,uint256)
+	;; Signature: 0x7f8d53c6
+	;;
 	;; Calldata:
 	;; 
 	;; [0]	 	32 byte key
@@ -59,12 +84,15 @@
 
 	32 calldataload		;; put the value to store on the stack
 	0 calldataload		;; put the address to store it in on the stack
-	sstore			;; store the address
+	32 sstore		;; store the 32 byte value at address
 
-	1 mstore		;; store success in memory location 0
+	0 1 mstore		;; store success in memory location 0
 	0 32 return		;; return to caller
 
 .label :get
+	;; Signature: get(address)
+	;; Selector: 0xc2bc2efc
+	;;
 	;; Calldata:
 	;;
 	;; [0]		value address
@@ -79,10 +107,8 @@
 	:abort jumpi
 
 	0 calldataload	;; get the address to retrieve
-	sload		;; load the data from the address
+	32 sload	;; load 32 bytes of data from the address
 	0 mstore	;; store the value at memory location 0
 
 	0 32 return	;; return the 32 bytes of data from s[address]
-
-.label :end	
 .end

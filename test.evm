@@ -3,9 +3,12 @@
 .include "examples/abort.evm"	;; required by safeAdd	
 .include "examples/safeAdd.evm"	;; include library code
 
+.define defined-number 10	
+.define defined-string "this is a string"	
+
 .label :main			;; main code start
 
-	10 10 add 		;; unsafe add instruction call	
+	10 defined-number add	;; unsafe add instruction call	
 	pop
 	
 	:after jump		;; jump past infinite loop
@@ -13,7 +16,10 @@
 	:main jump  		;; loop back to main, but jumped over abov
 
 .label :after			;; after infinite loop call
-	"this is a string"	;; autopushed string less than 32 characters
+	
+	defined-string pop	;; push defined string and pop it
+	
+	"this is a another string"	;; autopushed string less than 32 characters
 	pop
 
 	;; Call :safeAdd from library
