@@ -364,6 +364,16 @@
               (setf body (substitute arg name body)))
             (macro-args macro) args)
 
+    ;; expand definition constants
+    (setf body
+          (mapcan (lambda (x)
+                    (aif (gethash x *defines*)
+                         (if (listp it)
+                             (reverse it)
+                           (list it))
+                         (list x))) body))
+
+    
     (format *error-output* "Expanded Macro: ~S" body)
     body))
 
