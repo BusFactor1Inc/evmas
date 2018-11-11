@@ -41,7 +41,8 @@ Constant words may be defined using .define, ie:
 Files may be included with the .include "<filename>" directive and are
 inserted inline into the bytecode stream.
 
-Basic, non-recursively expanded macros can be defined with the .macro
+Basic, non-recursively expanded macros with arguments (ie. you can't
+yet use a macro within a macro) can be defined with the .macro
 operator:
 
 	.macro add3 (x y z) (x y add z add)
@@ -349,6 +350,15 @@ $ sh build.sh
 
 Evmas should also work with with other lisps (clisp, ecl, etc) with a
 different 'build' command.
+
+
+To use the some of the helper scripts requires node.js, so run:
+
+```
+npm install
+```
+
+To get deploy.sh and the function selector generator to work.
 
 Function Selector Generator
 --
