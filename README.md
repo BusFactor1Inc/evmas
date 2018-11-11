@@ -347,14 +347,15 @@ Then use the following command to build evmas:
 $ sh build.sh
 ```
 
-Evmas should also work with with other lisps (clisp, ecl, etc) with a
-different 'build' command.
+Evmas should also build with with other lisps (clisp, ecl, etc) using
+a different build command to export an executable.
 
 
-To use the some of the helper scripts requires node.js, so run:
+Some of the helper scripts requires node.js, so install it run:
 
 ```
-npm install
+$ brew install npm	
+$ npm install
 ```
 
 To get deploy.sh and the function selector generator to work.
