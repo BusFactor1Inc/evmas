@@ -206,13 +206,18 @@
 (defop selfdestruct #xff 5000)
 
 (defparameter *labels* ())
+(defparameter *defines* ())
+
+(defmacro aif (p y &optional n)
+  `(let ((it ,p))
+     (if it ,y ,n)))
 
 (defun get-opcode (instruction)
-  (let ((data (gethash instruction *instruction-table*)))
+  (let ((data (aif (gethash instruction *instruction-table*) it)))
     (unless data
       (format *error-output* "Invalid opcode: ~A~%" instruction)
       (quit))
-    
+  
     (instruction-opcode data)))
       
 
@@ -235,7 +240,11 @@
   (when data ;; ignore nils
     (typecase data
       (symbol
-       (emit-byte (get-opcode data)))
+       (aif (gethash data *defines*)
+            (typecase it
+              (number (auto-push-number it))
+              (string (auto-push-string it)))
+            (emit-byte (get-opcode data))))
       (number
        (auto-push-number data))
       (string
@@ -338,6 +347,10 @@
                (setf code (append (include-file (no-error-read s)) code))
                ;(print code)
                )
+              (.define
+               (let ((name (no-error-read s))
+                     (value (no-error-read s)))
+                 (setf (gethash name *defines*) value)))
 ;; Interesting idea but doesn't work just yet              
 ;;              (.requires
 ;;               (let ((label (no-error-read s)))
@@ -355,13 +368,14 @@
       code)))
 
 (defun main (&optional filename)
+  (setf *current-ip* 0
+        *nibblecode* ()
+        *labels* (make-hash-table)
+        *defines* (make-hash-table))
+    
   (let* ((s (if filename (open filename) *standard-input*))
          (code (read-source-file s)))
       
-    (setf *current-ip* 0
-          *nibblecode* ()
-          *labels* (make-hash-table))
-    
     (setf code (nreverse code))
 
     ;(print :assembling *error-output*)

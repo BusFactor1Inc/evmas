@@ -9,6 +9,15 @@ sized push instruction.
 Strings up to 32 characters are supported and autopushed onto the
 stack using the correctly sized push instruction.
 
+Constant words may be defined using .define, ie:
+
+	.define x 10
+	.defien s "string"
+
+	x x add		;; x is replaced by 10 in the assembly
+
+	s pop		;; s is replaced by the above string and popped
+
 Comments are started with semicolon (;).
 
 Files may be included with the .include "<filename>" directive and are
