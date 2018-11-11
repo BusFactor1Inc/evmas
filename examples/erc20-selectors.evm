@@ -1,0 +1,14 @@
+;;
+;; ERC20 standard function selectors
+;;	
+.define get-name-selector       #x06fdde03 ; name()
+.define get-symbol-selector     #x95d89b41 ; symbol()
+.define et-decimals-selector    #x313ce567 ; decimals()
+.define get-total-supply-selelctor #x18160ddd ; totalSupply()
+.define get-balance-of-selector #x70a08231 ; balanceOf(address)
+.define transfer-selector       #xa9059cbb ; transfer(address,uint256)
+.define transfer-from-selecor	#x23b872dd ; transferFrom(address,address,uint256)
+.define approve-selector        #x095ea7b3 ; approve(address,uint256)
+.define get-allowance-selector  #xdd62ed3e ; allowance(address,address)
+
+.end
