@@ -283,6 +283,8 @@
           (keyword
            (let* ((label instruction)
                   (address (gethash label *labels*)))
+             (unless address
+               (error "Unknown labe: ~A" label))
              (emit 'push4)
              (emit-bytes +jump-label-size+ address)))
           (t
