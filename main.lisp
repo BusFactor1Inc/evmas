@@ -80,6 +80,10 @@
 (defop not	#x19 3)
 (defop byte	#x1a 3)
 
+(defop shl	#x1b 3)
+(defop shr	#x1c 3)
+(defop sar	#x1d 3)
+
 (defop sha3	#x20)
 
 (defop address	#x30 2)
