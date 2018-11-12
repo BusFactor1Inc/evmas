@@ -17,21 +17,26 @@
 .define	name-size	28
 .define symbol 		"BF1"
 .define symbol-size 	3
+.define decimals	18	
+.define initial-supply  100
 	
 ;;
 ;; Contract constructor code.
 ;;	
 .label :init
 	;; Copy the contract code to memory
-	:start codesize sub	;; contract code size
+	:initend codesize sub	;; contract code size
 	dup1			;; keep a copy of code size
-	:start			;; code start address
+	:initend
 	0			;; where to copy it to
 	codecopy		;; perform contract code copy to memory
 
+	initial-supply caller sstore
+
 	;; Return code for contract
 	0 return		;; code size already on stack
-
+.address :initend
+	
 ;;
 ;; Include ERC20 function selectors.
 ;;
@@ -46,31 +51,59 @@
 .define ensure-no-arguments  	(calldatasize 4 sub :abort jumpi)	
 .define ensure-one-argument 	(calldatasize 36 sub :abort jumpi)
 
-.define load-selector			(calldataload #x4)
-.define load-arg0			(calldataload #x24)
-.define load-arg1			(calldataload #x44)
+.define load-selector			(4 0 28 calldatacopy 0 mload)
+
+.define check-0-args			(calldatasize #x4 sub :abort jumpi)	
+.define check-1-arg			(calldatasize #x24 sub :abort jumpi)	
+.define check-2-args			(calldatasize #x44 sub :abort jumpi)
+.define check-3-args			(calldatasize #x64 sub :abort jumpi)
+	
+.define load-arg0			(#x4 calldataload)
+.define load-arg1			(#x24 calldataload)
+.define load-arg2			(#x44 calldataload)
 
 .macro dispatch-function (function-label selector)
-	(load-selector		;; load selector
-         selector sub		;; compare with arg
-	 iszero			;; check if match
+	(dup1			;; copy selector
+         selector iszero	;; compare with arg
 	 function-label jumpi)  ;; call function if match
-
 
 ;;
 ;; Start of installed contract code.
 ;;
-.label :start
-	;; Check for name() call
+.org 0	
+.address :start
+	;; Load the selector from the call data
+	load-selector		
+
+	;; name() call
 	dispatch-function :get-name get-name-selector
 
-	;; Check for symbol() call
+	;; symbol() call
 	dispatch-function :get-symbol get-symbol-selector
 
-.label :next1	
-	
-	stop
+	;; decimals() call
+	dispatch-function :get-decimals get-decimals-selector
 
+	;; totalSupply() call
+	dispatch-function :total-supply get-total-supply-selector
+
+	;; balanceOf(address)
+	dispatch-function :get-balance-of get-balance-of-selector
+
+	;; transfer(address,uint256)
+	dispatch-function :transfer transfer-selector
+	
+	;; (address,address,uint256)
+	dispatch-function  :transfer-from transfer-from-selector
+
+	;; approve(address,uint256)
+	dispatch-function :approve approve-selector
+
+	;; allowance(address,address)
+	dispatch-function :get-allowance get-allowance-selector
+
+	;; Default handler for contract
+	not-payable stop
 
 ;;
 ;; Include library functions.
@@ -81,11 +114,48 @@
 ; .include "examples/safeMath/safeSub.evm"
 
 .label :get-name
-	name 0 name-size mstore ;; store return value in memory
-	0 name-size return	;; return name value
+	not-payable check-0-args
+	#x20 0 mstore	;; Return dynamic bytes
+	name #.(+ #x20 (gethash 'name-size *defines*)) mstore
+	name-size #x20 mstore ;; the order of these last 2 is important
+	#x60 0 return	;; return name value
 
 .label :get-symbol
-	symbol 0 symbol-size mstore	;; store symbol value in memory
-	0 symbol-size return		;; return symbol value
+	not-payable check-0-args
+	#x20 0 mstore	;; Return dynamic bytes
+	symbol #.(+ #x20 (gethash 'symbol-size *defines*)) mstore
+	symbol-size #x20 mstore ;; the order of these last 2 is important
+	#x60 0 return	;; return symbol value
 
+.label :get-decimals	
+	not-payable check-0-args
+	decimals 0 mstore
+	#x20 0 return
+
+.label :total-supply
+	not-payable check-0-args
+	initial-supply 0 mstore
+	#x20 0 return
+
+	;; balanceOf(address)
+.label :get-balance-of
+	stop
+
+	;; transfer(address,uint256)
+.label :transfer
+	stop
+	
+	;; (address,address,uint256)
+.label :transfer-from
+	stop
+
+	;; approve(address,uint256)
+.label :approve
+	stop
+
+	;; allowance(address,address)
+.label :get-allowance
+	stop
+	
+.label :end
 .end
