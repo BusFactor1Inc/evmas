@@ -5,7 +5,7 @@ var address = process.argv[2];
 var abiFile = process.argv[3];
 
 if(!address || !abiFile) {
-	console.log("Usage: cat bytecode | node deploy.js <address> <abiFile>");
+	console.error("Usage: cat bytecode | node deploy.js <address> <abiFile>");
 	process.exit(1);
 }
 	
@@ -35,12 +35,12 @@ process.stdin.on('end', function() {
 
 	
 	web3.eth.personal.unlockAccount(address, password).
-	    then(() => { console.log('Account unlocked.'); }).
+	    then(() => { console.error('Account unlocked.'); }).
 	    catch(console.error);
 
 	web3.eth.getGasPrice().
 		then((averageGasPrice) => {
-	       		console.log("Average gas price: " + averageGasPrice);
+	       		console.error("Average gas price: " + averageGasPrice);
 	       		gasPrice = averageGasPrice;
 	   }).
 	
@@ -51,17 +51,18 @@ process.stdin.on('end', function() {
 
 	contract.deploy().estimateGas().
 		then((estimatedGas) => {
-        		console.log("Estimated gas: " + estimatedGas);
+        		console.error("Estimated gas: " + estimatedGas);
 	        	gas = estimatedGas;
 	}).
 
 	catch(console.error);
 	contract.deploy().send({from: address,
 				gasPrice: gasPrice, 
-				gas: gas
+				gas: 300000,
 	}).then((instance) => { 
-	    console.log("Contract mined at " + instance.options.address);
-	    contractInstance = instance; 
+		console.error("Contract address:");
+		console.log(instance.options.address);
+		contractInstance = instance; 
 	});
 });
 
