@@ -17,6 +17,10 @@ value will be big enough even for the largest of contracts.  Should
 this be too big or small, change +jump-label-size+ to a number of
 bytes value.
 
+.address is like label but it saves the current ip in the label
+without outputting any bytecode. Used for relocation calculations
+during contract construction.
+
 Source files must be ended with the assembler op .end to signal end of
 code.
 
