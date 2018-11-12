@@ -1,3 +1,5 @@
+.enable-read-eval!
+
 ;;
 ;; erc20.evm 
 ;;
