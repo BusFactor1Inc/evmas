@@ -17,9 +17,9 @@ value will be big enough even for the largest of contracts.  Should
 this be too big or small, change +jump-label-size+ to a number of
 bytes value.
 
-.address is like label but it saves the current ip in the label
+.address is like .label but it saves the current ip in the label
 without outputting any bytecode. Used for relocation calculations
-during contract construction.
+during contract construction and not for jump targets.
 
 Source files must be ended with the assembler op .end to signal end of
 code.
@@ -61,7 +61,19 @@ Where => means "expands to".
 Usage
 --
 
+Evmas read source from standard input.  Set the environment variable
+VERBOSE=1 to get debugging output that could be helpful for catching
+typos.
+	
+
 ```
+bash-3.2$ ./evmas < test.evm
+
+:BYTECODE-GAS-COST 
+6268 
+:BYTECODE 
+630000001D565B6461626F7274005B80910180911163000000065790565B600A600A0150630000003056630000001D565B6F74686973206973206120737472696E67507774686973206973206120616E6F7468657220737472696E6750630000006C600A600A630000000E565B5000
+
 bash-3.2$ cat test.evm
 :main jump			;; jump to main code start
 
@@ -95,20 +107,6 @@ bash-3.2$ cat test.evm
 	stop				;; stop execution
 
 .end
-bash-3.2$ ./evmas < test.evm
-
-Including "examples/abort.evm"
-
-Succesfully included "examples/abort.evm"
-
-Including "examples/safeAdd.evm"
-
-Succesfully included "examples/safeAdd.evm"
-
-:BYTECODE-GAS-COST 
-6268 
-:BYTECODE 
-630000001D565B6461626F7274005B80910180911163000000065790565B600A600A0150630000003056630000001D565B6F74686973206973206120737472696E67507774686973206973206120616E6F7468657220737472696E6750630000006C600A600A630000000E565B5000
 ```
 
 Dissasembly/Verification
