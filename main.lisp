@@ -270,6 +270,11 @@
           (format *error-output* "Definining label: ~S~%" label)
           (setf (gethash label *labels*) *current-ip*)
           (emit-byte (get-opcode 'jmpdest))))
+       (.address
+        (let ((label (pop code)))
+          (setf (gethash label *labels*) *current-ip*)))
+       (.org
+        (setf *current-ip* (pop code)))
        (t 
         (typecase instruction
           (keyword
@@ -290,6 +295,9 @@
        (.label
         (pop code)
         (emit 'jmpdest))
+       (.address (pop code))
+       (.org
+        (setf *current-ip* (pop code)))
        (t
         (typecase instruction
           (keyword
@@ -379,8 +387,6 @@
 
 (defun read-source-file (s)
 
-  (setf *read-eval* nil) ;; disable #.(...), eval during read.
-  
   (labels ((include-file (filename)
              (with-open-file (s filename)
                (format *error-output* "~%Including ~S~%" filename)
@@ -428,7 +434,8 @@
       code)))
 
 (defun main (&optional filename)
-  (setf *current-ip* 0
+  (setf *read-eval* nil
+        *current-ip* 0
         *nibblecode* ()
         *labels* (make-hash-table)
         *defines* (make-hash-table)
