@@ -201,13 +201,23 @@
 
 (defop staticcall #xfa 40)
 
-;; (defop revert #xfe 0)
+(defop revert #xfd 0)
+(defop invalid #xfe 0)
 
 (defop selfdestruct #xff 5000)
 
 (defparameter *labels* ())
 (defparameter *defines* ())
 (defparameter *macros* ())
+
+(defparameter *verbose* (posix-getenv "VERBOSE"))
+
+(defun verbose (s &rest args)
+  (when *verbose*
+    (eval `(format *error-output* ,s ,@args))))
+
+(defun lookup (x)
+  (gethash x *defines*))
 
 (defstruct macro 
   args body)
@@ -219,7 +229,7 @@
 (defun get-opcode (instruction)
   (let ((data (aif (gethash instruction *instruction-table*) it)))
     (unless data
-      (format *error-output* "Invalid opcode: ~S~%" instruction)
+      (error "Invalid opcode: ~S~%" instruction)
       (quit))
   
     (instruction-opcode data)))
@@ -267,7 +277,7 @@
      (case instruction
        (.label
         (let ((label (pop code)))
-          (format *error-output* "Definining label: ~S~%" label)
+          (verbose "Definining label: ~S~%" label)
           (setf (gethash label *labels*) *current-ip*)
           (emit-byte (get-opcode 'jmpdest))))
        (.address
@@ -306,10 +316,7 @@
              (unless address
                (setf address (gethash (make-keyword label) *labels*))
                (unless address
-                 (format *error-output* "~%Error: Unknown label: ~S~%" label)
-                 (maphash (lambda (k v)
-                            (print k *error-output*)
-                            (print v *error-output*)) *labels*)
+                 (error "~%Error: Unknown label: ~S~%" label)
                  (quit)))
              (emit 'push4)
              (emit-bytes +jump-label-size+ address)))
@@ -382,16 +389,16 @@
                          (list x))) body))
 
     
-    (format *error-output* "Expanded Macro: ~S" body)
+    (verbose "Expanded Macro: ~S" body)
     body))
 
 (defun read-source-file (s)
 
   (labels ((include-file (filename)
              (with-open-file (s filename)
-               (format *error-output* "~%Including ~S~%" filename)
+               (verbose "~%Including ~S~%" filename)
                (let ((code (read-source-file s)))
-                 (format *error-output* "~%Succesfully included ~S~%" filename)
+                 (verbose "~%Succesfully included ~S~%" filename)
                  code)
                )))
     (let (code)
@@ -406,14 +413,14 @@
               (.define
                (let ((name (no-error-read s))
                      (value (no-error-read s)))
-                 (format *error-output* "Defining ~S as: ~S~%" name value)
+                 (verbose "Defining ~S as: ~S~%" name value)
                  (setf (gethash name *defines*) value)))
               (.macro
                (let ((name (no-error-read s))
                      (args (no-error-read s))
                      (body (no-error-read s)))
-                 (format *error-output* "Definiing macro ~S with args ~S as: ~S~%"
-                         name args body)
+                 (verbose "Definiing macro ~S with args ~S as: ~S~%"
+                          name args body)
                  (setf (gethash name *macros*)
                        (make-macro :args args :body body))))
               (.enable-read-eval!
@@ -447,9 +454,10 @@
       
     (setf code (nreverse code))
 
-    (print :scanning-for-labels *error-output*)
-    (pprint code *error-output*)
-    (fresh-line)
+    (when *verbose*
+      (print :scanning-for-labels *error-output*)
+      (pprint code *error-output*)
+      (fresh-line))
     
     (scan-for-labels code)
     
