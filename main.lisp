@@ -1,5 +1,10 @@
 (defparameter *nibblecode* ())
 (defparameter *current-ip* 0)
+(defparameter *labels* ())
+(defparameter *defines* ())
+(defparameter *macros* ())
+
+(defparameter *verbose* nil)
 
 (defconstant +jump-label-size+ 4) ;; FIXME: breaks when this is changed
 
@@ -73,16 +78,22 @@
 (defop gt	#x11 3)
 (defop slt	#x12 3)
 (defop sgt	#x13 3)
-(defop iszero	#x14 3)
-(defop and	#x15 3)
-(defop or	#x16 3)
+(defop eq	#x14 3)
+(defop iszero	#x15 3)
+(defop and	#x16 3)
+(defop or	#x17 3)
 (defop xor	#x18 3)
 (defop not	#x19 3)
 (defop byte	#x1a 3)
 
-(defop shl	#x1b 3)
-(defop shr	#x1c 3)
-(defop sar	#x1d 3)
+;; Shift and Rotate Instructions, see EIP-145
+;; https://github.com/ethereum/EIPs/blob/master/EIPS/eip-145.md
+;; Planned in 2019 (Constantinople)
+;; https://ethereum.stackexchange.com/questions/299/why-are-there-no-bit-shifting-opcodes-in-ethereum
+;; Emulate them for now
+;(defop shl	#x1b 3)
+;(defop shr	#x1c 3)
+;(defop sar	#x1d 3)
 
 (defop sha3	#x20)
 
@@ -209,12 +220,6 @@
 (defop invalid #xfe 0)
 
 (defop selfdestruct #xff 5000)
-
-(defparameter *labels* ())
-(defparameter *defines* ())
-(defparameter *macros* ())
-
-(defparameter *verbose* (posix-getenv "VERBOSE"))
 
 (defun verbose (s &rest args)
   (when *verbose*
@@ -445,7 +450,8 @@
       code)))
 
 (defun main (&optional filename)
-  (setf *read-eval* nil
+  (setf *verbose* (posix-getenv "VERBOSE")
+        *read-eval* nil
         *current-ip* 0
         *nibblecode* ()
         *labels* (make-hash-table)
@@ -461,14 +467,9 @@
     (when *verbose*
       (print :scanning-for-labels *error-output*)
       (pprint code *error-output*)
-      (fresh-line))
+      (fresh-line *error-output*))
     
     (scan-for-labels code)
-    
-    ;;(let ((*print-base* 16))
-    ;;  (maphash (lambda (k v)
-    ;;             (print k)
-    ;;             (print v)) *labels*))
     
     (setf *current-ip* 0
           *nibblecode* ())
