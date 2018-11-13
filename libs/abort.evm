@@ -1,0 +1,5 @@
+.label :abort
+	
+	0 0 revert
+
+.end

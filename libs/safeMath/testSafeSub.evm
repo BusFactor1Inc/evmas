@@ -1,0 +1,29 @@
+;;
+;; testSafeSub.evm
+;;
+;; Test the safeSub.evm function, first with no overflow, then with.
+;;
+;; BusFactor1 Inc.
+;; Copyright 2018
+;;
+
+	:main jump
+
+.include "libs/abort.evm"	;; required for safeSub
+.include "libs/safeMath/safeSub.evm"
+
+.label :main
+
+	;; Won't cause underflow
+	:afterSafeSub 10 10 :safeSub jump .label :afterSafeSub
+
+	;; stop if not 0, ending debug trace with stop
+	iszero :stop jumpi
+
+	;; Will cause underflow and abort
+	:afterSafeSub2 0 10 :safeSub jump .label :afterSafeSub2
+
+	;; Stop execution
+.label :stop	
+	stop
+.end

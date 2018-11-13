@@ -1,0 +1,37 @@
+;; 
+;; safeSub - an assembly version of the safeSub function.
+;;
+;; Calling convention:
+;;
+;; 	- 2 arguments should be placed on the stack, then return value
+;;	
+;;	- overflows/underflows are handled by revert (soft throw)
+;;
+;; 	- RA is Return Address
+;;
+;; 	- requires the :abort label to be defined in your source
+;; 	(generally through .include "libs/abort.evm")
+;;
+;; BusFator1 Inc.
+;; Copyright 2018
+;;
+;; License: MIT
+
+.label :safeSub
+	;; Stack: [b a RA]
+	;;
+	;; Return stack: [a-b] or abort if underflow
+	swap2		;; [RA a b]
+	dup1   		;; [RA a b b]
+	swap2  		;; [RA b b a]
+	sub    		;; [RA b a-b]
+	dup1		;; [RA b a-b a-b]
+	swap2		;; [RA a-b a-b b]
+
+	;; Check for overflow
+	lt :abort jumpi	;; :abort if overflow, [RA a-b]
+
+	swap1		;; [a-b RA]
+	jump		;; return, [a-b]
+
+.end

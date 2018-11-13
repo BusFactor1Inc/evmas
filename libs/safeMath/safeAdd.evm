@@ -1,0 +1,38 @@
+;; 
+;; safeAdd - an assembly version of the safeAdd function.
+;;
+;; Calling convention:
+;;
+;; 	- 2 arguments should be placed on the stack
+;;	
+;;	- return value is left on the stack at position 0
+;;
+;;	- overflows/underflows are handled by revert (soft throw)
+;;
+;; 	- RA is Return Address
+;;
+;; BusFator1 Inc.
+;; Copyright 2018
+;;
+;; License: MIT
+
+;; .requires :abort ;; future feature
+	
+.label :safeAdd
+	;; Stack: [b a RA]
+	;;
+	;; Return stack: [a+b] or abort if overflow
+	swap2		;; [RA a b]
+	dup1   		;; [RA a b b]
+	swap2  		;; [RA b b a]
+	add    		;; [RA b a+b]
+	dup1		;; [RA b a+b a+b]
+	swap2		;; [RA a+b a+b b]
+
+	;; Check for overflow
+	gt :abort jumpi	;; :abort if overflow, [RA a+b 0/1]
+
+	swap1		;; [a+b RA]
+	jump		;; [a+b]
+
+.end

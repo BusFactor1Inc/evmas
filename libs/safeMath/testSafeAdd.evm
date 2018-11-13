@@ -1,0 +1,28 @@
+;;
+;; testSafeAdd.evm
+;;
+;; Test the safeAdd.evm function, first with no overflow, then with.
+;;
+;; BusFactor1 Inc.
+;; Copyright 2018
+;;
+
+	:main jump
+
+.include "libs/abort.evm"	;; required for safeAdd
+.include "libs/safeMath/safeAdd.evm"
+
+.label :main
+
+	;; Won't cause overflow
+	10 10 :afterSafeAdd :safeAdd jump .label :afterSafeAdd
+
+	;; stop if not 20, ending debug trace with stop
+	20 sub :stop jumpi
+
+	;; Will cause overflow and abort, ending debug trace with revert
+	1 0 sub 10 :afterSafeAdd2 :safeAdd jump .label :afterSafeAdd2
+	
+.label :stop
+	stop	
+.end
