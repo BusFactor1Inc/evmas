@@ -35,10 +35,8 @@ process.stdin.on('end', function() {
 
 	
 	web3.eth.personal.unlockAccount(address, password).
-	    then(() => { console.error('Account unlocked.'); }).
-	    catch(console.error);
-
-	web3.eth.getGasPrice().
+	    then(() => { console.error('Account unlocked.'); 
+		web3.eth.getGasPrice().
 		then((averageGasPrice) => {
 	       		console.error("Average gas price: " + averageGasPrice);
 	       		gasPrice = averageGasPrice;
@@ -56,14 +54,19 @@ process.stdin.on('end', function() {
 	}).
 
 	catch(console.error);
+	console.error("Deploying..");
 	contract.deploy().send({from: address,
 				gasPrice: gasPrice, 
 				gas: 300000,
+				value: 0
 	}).then((instance) => { 
 		console.error("Contract address:");
 		console.log(instance.options.address);
 		contractInstance = instance; 
 	});
+	}).
+	    catch(console.error);
+
 });
 
 
