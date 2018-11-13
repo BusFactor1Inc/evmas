@@ -1,4 +1,5 @@
 .enable-read-eval!
+.include "libs/shifts-and-rotate.evm"
 
 ;;
 ;; erc20.evm 
@@ -24,19 +25,23 @@
 
 .define _owner 0	
 	
+.define not-payable		(callvalue :abort jumpi)
+.define payable			(callvalue iszero :abort jumpi)
+	
 ;;
 ;; Contract constructor code.
 ;;	
 .address :init
+	not-payable
+	caller _owner sstore	;; save token owner
+	initial-supply caller sstore ;; assign initial token supply to owner
+
 	;; Copy the contract code to memory
 	:initend codesize sub	;; contract code size
 	dup1			;; make a copy of code size
 	:initend
 	0			;; where to copy it to
 	codecopy		;; perform contract code copy to memory
-
-	caller _owner sstore	;; save token owner
-	initial-supply caller sstore ;; assign initial token supply to owner
 
 	;; Return code for contract
 	0 return		;; code size already on stack
@@ -47,9 +52,6 @@
 ;;
 .include "examples/erc20/erc20-selectors.evm"	
 
-.define not-payable		(callvalue :abort jumpi)
-.define payable			(callvalue iszero :abort jumpi)
-	
 ;;
 ;; Arguments helpers
 ;;	
@@ -64,13 +66,12 @@
 .define push-arg1			(#x24 calldataload)
 .define push-arg2			(#x44 calldataload)
 
-
 ;; UNTESTED
-.define only-owner			(caller 32 0 sload sub :abort jumpi)
+.define only-owner			(caller 32 _owner sload sub :abort jumpi)
 
 .macro dispatch-function (function-label selector)
 	(dup1			;; copy selector
-         selector iszero	;; compare with arg
+         selector eq		;; compare with arg
 	 function-label jumpi)  ;; call function if match
 	
 ;;
@@ -80,6 +81,21 @@
 .address :start
 	;; Load the selector from the call data
 	load-selector		
+
+	;; transfer(address,uint256)
+	dispatch-function :transfer transfer-selector
+	
+	;; balanceOf(address)
+	dispatch-function :get-balance-of get-balance-of-selector
+
+	;; transfer-from(address,address,uint256)
+	dispatch-function  :transfer-from transfer-from-selector
+
+	;; approve(address,uint256)
+	dispatch-function :approve approve-selector
+
+	;; allowance(address,address)
+	dispatch-function :get-allowance get-allowance-selector
 
 	;; name() call
 	dispatch-function :get-name get-name-selector
@@ -93,23 +109,8 @@
 	;; totalSupply() call
 	dispatch-function :total-supply get-total-supply-selector
 
-	;; balanceOf(address)
-	dispatch-function :get-balance-of get-balance-of-selector
-
-	;; transfer(address,uint256)
-	dispatch-function :transfer transfer-selector
-	
-	;; transfer-from(address,address,uint256)
-	dispatch-function  :transfer-from transfer-from-selector
-
-	;; approve(address,uint256)
-	dispatch-function :approve approve-selector
-
-	;; allowance(address,address)
-	dispatch-function :get-allowance get-allowance-selector
-
 	;; Default handler for contract
-	revert
+	not-payable
 
 ;;
 ;; Include library functions.
@@ -143,17 +144,56 @@
 	initial-supply 0 mstore
 	#x20 0 return
 
+
+;; Ensure the value is an address (20 bytes), leave address on stack if so, abort if not
+;; Not cheap without shift instructions, but they arent' working yet
+.define ensure-address			(dup1 #xFFFFFFFFFFFFFFFFFFFFFFFF0000000000000000000000000000000000000000 and :abort jumpi)		
+.define ensure-value			(dup1 initial-supply lt :abort jumpi)
+
+
 	;; balanceOf(address)
 .label :get-balance-of
 	not-payable ensure-1-arg
-	;; TODO
-	stop
+	push-arg0 ensure-address	;; ensure arg1 is an address
+	sload 0 mstore			;; load balance from storage
+	#x20 0 return			;; return value
+
 
 	;; transfer(address,uint256)
 .label :transfer
 	not-payable ensure-2-args
-	;; TODO
-	stop
+
+	push-arg1 ensure-value		;; [value]
+	dup1				;; [value, value]
+ 	iszero :transfer-return jumpi	;; value of zero is noop, return, [value]
+					;; memory is initialized to 0, so return 0
+
+	caller sload			;; get balance [value, callerBalance]
+
+	dup2				;; [value, callerBalance, value]
+	dup2				;; [value, callerBalance, value, callerBalance]
+	lt :abort jumpi			;; if callerBalance < value abort,
+					;; [value, callerBalance]
+	dup2				;; [value, value, callerBalance]
+	swap1				;; [value, callerBalance, value]
+
+
+	sub 				;; [value, callerBalance-value]
+	caller sstore			;; store new caller balance, [value]
+
+	push-arg0 ensure-address	;; [value, destinationAddres]
+	dup1				;; [value, destinationAddress, destinationAddres]
+	sload				;; [value, destinationAddress, destinationBalance]
+	swap1 swap2			;; [destinationAddress, destinationBalance, value]
+	:afterSA :safeAdd jump .label :afterSA ;; [destinationAddress, destinationBalance+value]
+
+	swap1				;; [destinationBalance+value, destinationAddress]
+	sstore				;; store new balance
+
+	1 0 mstore			;; return true value
+
+.label :transfer-return
+	#x20 0 return
 	
 	;; (address,address,uint256)
 .label :transfer-from
