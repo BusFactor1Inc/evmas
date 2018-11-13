@@ -42,6 +42,9 @@ Constant words may be defined using .define, ie:
 
 	s pop		;; s is replaced by the above string and popped
 
+	;; Multiple instructions can be defined in a list
+	.define sequence (10 10 add)
+
 Files may be included with the .include "<filename>" directive and are
 inserted inline into the bytecode stream.
 
