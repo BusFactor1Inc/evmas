@@ -330,8 +330,6 @@ Supported Instructions
 
 Some EVM instruction set references can be found here:
 
-https://gist.github.com/hayeah/bd37a123c02fecffbe629bf98a8391df
-
 https://solidity.readthedocs.io/en/v0.4.25/assembly.html
 
 https://ethervm.io
