@@ -1,6 +1,4 @@
 .enable-read-eval!
-.include "libs/shifts-and-rotate.evm"
-
 ;;
 ;; erc20.evm 
 ;;
@@ -51,20 +49,12 @@
 ;; Include ERC20 function selectors.
 ;;
 .include "examples/erc20/erc20-selectors.evm"	
+.include "examples/erc20/erc20-events.evm"	
 
 ;;
 ;; Arguments helpers
 ;;	
-.define load-selector			(4 0 28 calldatacopy 0 mload)
-
-.define ensure-0-args			(calldatasize #x4 sub :abort jumpi)	
-.define ensure-1-arg			(calldatasize #x24 sub :abort jumpi)	
-.define ensure-2-args			(calldatasize #x44 sub :abort jumpi)
-.define ensure-3-args			(calldatasize #x64 sub :abort jumpi)
-	
-.define push-arg0			(#x4 calldataload)
-.define push-arg1			(#x24 calldataload)
-.define push-arg2			(#x44 calldataload)
+.include "libs/argument-helpers.evm"
 
 ;; UNTESTED
 .define only-owner			(caller 32 _owner sload sub :abort jumpi)
