@@ -69,6 +69,9 @@
 ;;
 .org 0	
 .address :start
+	;; Default handler for contract
+	not-payable
+
 	;; Load the selector from the call data
 	load-selector		
 
@@ -99,15 +102,14 @@
 	;; totalSupply() call
 	dispatch-function :total-supply get-total-supply-selector
 
-	;; Default handler for contract
-	not-payable
-
+	;; Default handler does nothing
+	0 0 revert
 ;;
 ;; Include library functions.
 ;; 
 
-.include "examples/abort.evm"
-.include "examples/safeMath/safeAdd.evm"
+.include "libs/abort.evm"
+.include "libs/safeMath/safeAdd.evm"
 ; .include "examples/safeMath/safeSub.evm"
 
 .label :get-name
